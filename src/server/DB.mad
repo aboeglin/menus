@@ -1,0 +1,32 @@
+import type { Wish } from "Wish"
+
+import type { Connection, Value } from "MadPostgres"
+import type { Connection, Value } from "MadPostgres"
+
+import type { Error } from "./Error"
+
+import { bad, chainRej } from "Wish"
+
+import Postgres from "MadPostgres"
+
+import { ConnectionFailed } from "./Error"
+
+
+CONNECTION_STRING = "postgresql://menus:menus@localhost:5432/menus"
+
+
+queryWithError :: (Postgres.Error -> Error)
+  -> String
+  -> Connection
+  -> Wish Error (List (List Value))
+export queryWithError = (errorConstructor, q, connection) => chainRej(
+  (e) => bad(errorConstructor(e)),
+  Postgres.query(connection, q),
+)
+
+
+connect :: Wish Error Connection
+export connect = chainRej(
+  () => bad(ConnectionFailed),
+  Postgres.connect(CONNECTION_STRING),
+)

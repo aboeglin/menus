@@ -1,0 +1,5 @@
+import Postgres from "MadPostgres"
+
+
+
+export type Error = InsertFailed(Postgres.Error) | ConnectionFailed | BadInput(String) | UnknownError

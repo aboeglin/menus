@@ -1,0 +1,12 @@
+import { DEFAULT_CONFIG, renderWithConfig, h1 } from "MadUI"
+
+
+
+main = () => {
+  renderWithConfig(
+    DEFAULT_CONFIG,
+    () => <h1>Menus</h1>,
+    {},
+    "app",
+  )
+}

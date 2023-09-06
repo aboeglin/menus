@@ -1,0 +1,110 @@
+import type { Maybe } from "Maybe"
+import type { Wish } from "Wish"
+
+import type { Connection } from "MadPostgres"
+
+import ByteArray from "ByteArray"
+import IO from "IO"
+import { Nothing } from "Maybe"
+import { fulfill } from "Wish"
+
+import Postgres from "MadPostgres"
+import Server from "MadServer"
+
+import type { Error } from "./Error"
+import { InsertFailed } from "./Error"
+import { connect, queryWithError } from "./DB"
+import { createIngredient } from "./Ingredient"
+
+
+
+initDB = () => do {
+  connection <- Postgres.connect("postgresql://menus:menus@localhost:5432/menus")
+
+  _ <- Postgres.query(
+    connection,
+    `CREATE TABLE ingredients (
+              id BIGSERIAL PRIMARY KEY NOT NULL,
+              name VARCHAR(256),
+              description VARCHAR(1024),
+              availableFrom SMALLINT,
+              availableUntil SMALLINT
+            );`,
+  )
+
+  Postgres.disconnect(connection)
+  return of({})
+}
+
+
+alias Ingredient = {
+  availableFrom :: Short,
+  availableUntil :: Short,
+  description :: String,
+  id :: Maybe Integer,
+  name :: String,
+}
+
+
+
+
+
+_createIngredient :: Ingredient -> Connection -> Wish Error {}
+_createIngredient = (ingredient, connection) => do {
+  IO.putLine(
+    `INSERT INTO ingredients VALUES(
+      NULL,
+      '${ingredient.name}',
+      '${ingredient.description}',
+      ${show(ingredient.availableFrom)},
+      ${show(ingredient.availableUntil)}
+   );`,
+  )
+  _ <- queryWithError(
+    InsertFailed,
+    `INSERT INTO ingredients VALUES(
+      default,
+      '${ingredient.name}',
+      '${ingredient.description}',
+      ${show(ingredient.availableFrom)},
+      ${show(ingredient.availableUntil)}
+    );`,
+    connection,
+  )
+  return of({})
+}
+
+
+main = () => {
+  //   fulfill(IO.cLog, IO.cLog, initDB())
+//   insertAsparagus = do {
+//     connection <- connect
+
+//     _ <- _createIngredient(
+//       {
+//         id: Nothing,
+//         name: "Asparagus",
+//         description: "Between April and June",
+//         availableFrom: 4,
+//         availableUntil: 6,
+//       },
+//       connection,
+//     )
+
+//     Postgres.disconnect(connection)
+//     return of({})
+//   }
+//   fulfill(IO.cLog, IO.cLog, insertAsparagus)
+
+  pipe(
+    Server.create,
+    Server.post("/ingredients", createIngredient),
+    Server.get(
+      "/",
+      () => {
+        return of({ status: 200, body: ByteArray.fromList([80, 82, 83]), headers: [] })
+      },
+    ),
+    Server.run(4001),
+  )({ ssl: Nothing, verbose: true })
+}

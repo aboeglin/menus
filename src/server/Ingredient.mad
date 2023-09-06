@@ -1,0 +1,176 @@
+import type { Response } from "Http"
+import type { Maybe } from "Maybe"
+import type { Wish } from "Wish"
+
+import type { Connection } from "MadPostgres"
+import type { IncomingRequest } from "MadServer"
+
+import type { Error } from "./Error"
+
+import ByteArray from "ByteArray"
+import { Left, Right } from "Either"
+import { Header } from "Http"
+import Integer from "Integer"
+import Json from "Json/Parse"
+import JsonPrinter from "Json/Print"
+import { Just } from "Maybe"
+import { bad, chainRej } from "Wish"
+
+import MadPostgres from "MadPostgres"
+
+import { connect, queryWithError } from "./DB"
+import { BadInput, InsertFailed, UnknownError } from "./Error"
+
+
+
+// ----------- Type ---------------------------------------
+
+alias Ingredient = {
+  availableFrom :: Short,
+  availableUntil :: Short,
+  description :: String,
+  id :: Maybe Integer,
+  name :: String,
+}
+
+
+// ----------- Parser -------------------------------------
+
+short = map(Integer.toShort, Json.integer)
+
+
+ingredientParser = Json.map5(
+  (id, name, description, availableFrom, availableUntil) => (
+    { id, name, description, availableFrom, availableUntil }
+  ),
+  Json.maybe(Json.field("id", Json.integer)),
+  Json.field("name", Json.string),
+  Json.field("description", Json.string),
+  Json.field("availableFrom", short),
+  Json.field("availableUntil", short),
+)
+
+
+fromJson :: String -> Wish Error Ingredient
+fromJson = (json) => where(Json.parse(ingredientParser, json)) {
+  Right(ingredient) =>
+    of(ingredient)
+
+  Left(err) =>
+    bad(BadInput(err))
+}
+
+
+// ----------- Printer ------------------------------------
+
+toJson :: Ingredient -> String
+toJson = (ingredient) => JsonPrinter.printJson(
+  80,
+  JsonPrinter.object([
+    #[
+      "id",
+      where(ingredient.id) {
+        Just(id) =>
+          JsonPrinter.integer(id)
+
+        _ =>
+          JsonPrinter.null
+      },
+    ],
+    #["name", JsonPrinter.string(ingredient.name)],
+    #["description", JsonPrinter.string(ingredient.description)],
+    #["availableFrom", JsonPrinter.integer(Integer.fromShort(ingredient.availableFrom))],
+    #["availableUntil", JsonPrinter.integer(Integer.fromShort(ingredient.availableUntil))],
+  ]),
+)
+
+
+// ----------- DB -----------------------------------------
+
+insertIngredient :: Connection -> Ingredient -> Wish Error Ingredient
+insertIngredient = (connection, ingredient) => do {
+  result <- queryWithError(
+    InsertFailed,
+    `INSERT INTO ingredients VALUES(
+      default,
+      '${ingredient.name}',
+      '${ingredient.description}',
+      ${show(ingredient.availableFrom)},
+      ${show(ingredient.availableUntil)}
+    ) RETURNING *;`,
+    connection,
+  )
+
+  return where(result) {
+    [
+      [
+        MadPostgres.Int8Value(id),
+        MadPostgres.VarCharValue(name),
+        MadPostgres.VarCharValue(description),
+        MadPostgres.Int4Value(availableFrom),
+        MadPostgres.Int4Value(availableUntil),
+      ],
+    ] =>
+      of({
+        id: Just(id),
+        name,
+        description,
+        availableFrom: Integer.toShort(availableFrom),
+        availableUntil: Integer.toShort(availableUntil),
+      })
+
+    or =>
+      bad(UnknownError)
+  }
+}
+
+
+// ----------- REST ---------------------------------------
+
+DB_CONNECTION_RESPONSE = {
+  status: 500,
+  body: ByteArray.fromString(`{ "error": "connection to database could not be established" }`),
+  headers: [Header("Content-Type", "application/json")],
+}
+
+error = (status, message) => (
+  {
+    status,
+    body: ByteArray.fromString(`{ "error": "${message}" }`),
+    headers: [Header("Content-Type", "application/json")],
+  }
+)
+
+createIngredient :: IncomingRequest -> Wish (Response ByteArray) (Response ByteArray)
+export createIngredient = (req) => do {
+  connection <- chainRej(() => bad(DB_CONNECTION_RESPONSE), connect)
+
+  return pipe(
+    .body,
+    ByteArray.toString,
+    fromJson,
+    chain(insertIngredient(connection)),
+    chain(
+      (ingredient) => of({
+        status: 200,
+        body: pipe(
+          toJson,
+          ByteArray.fromString,
+        )(ingredient),
+        headers: [Header("Content-Type", "application/json")],
+      }),
+    ),
+    chainRej(
+      where {
+        BadInput(_) =>
+          bad(error(400, "Invalid input"))
+
+        InsertFailed(_) =>
+          bad(error(500, "Could not be created"))
+
+        _ =>
+          bad(error(500, "Internal error"))
+      },
+    ),
+  )(req)
+}
