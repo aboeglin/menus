@@ -1,0 +1,12 @@
+import Json from "Json/Parse"
+
+
+
+// ----------- Type ---------------------------------------
+
+alias Recipe = { name :: String }
+
+
+// ----------- Parser -------------------------------------
+
+recipeParser = map((name) => ({ name }), Json.field("name", Json.string))

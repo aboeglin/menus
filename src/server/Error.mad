@@ -1,5 +1,5 @@
-import Postgres from "MadPostgres"
+import PG from "MadPostgres"
 
 
 
-export type Error = InsertFailed(Postgres.Error) | ConnectionFailed | BadInput(String) | UnknownError
+export type Error = InsertFailed(PG.Error) | ReadFailed(PG.Error) | ConnectionFailed | BadInput(String) | UnknownError

@@ -1,0 +1,160 @@
+import type { Wish } from "Wish"
+
+import Directory from "Directory"
+import File from "File"
+import { equals, not } from "Function"
+import IO from "IO"
+import List from "List"
+import String from "String"
+import { Wish } from "Wish"
+import { bad, chainRej, fulfill } from "Wish"
+
+import PG from "MadPostgres"
+
+
+
+type MigrationError
+  = FileCouldNotBeRead(String)
+  | FolderCouldNotBeRead(String)
+  | DBAccessFailed(PG.Error)
+
+
+readDir :: String -> Wish MigrationError (List String)
+readDir = (dir) => chainRej(() => bad(FolderCouldNotBeRead(dir)), Directory.read(dir))
+
+
+readFile :: String -> Wish MigrationError String
+readFile = (path) => chainRej(() => bad(FileCouldNotBeRead(path)), File.read(path))
+
+
+
+connect :: String -> Wish MigrationError PG.Connection
+export connect = (connectionString) => chainRej(
+  (e) => bad(DBAccessFailed(e)),
+  PG.connect(connectionString),
+)
+
+
+query :: (PG.Error -> MigrationError)
+  -> String
+  -> PG.Connection
+  -> Wish MigrationError (List (List PG.Value))
+export query = (errorConstructor, q, connection) => chainRej(
+  (e) => bad(errorConstructor(e)),
+  PG.query(connection, q),
+)
+
+
+runMigration :: PG.Connection -> String -> String -> Wish MigrationError {}
+runMigration = (connection, folder, migrationFile) => {
+  migrationName = String.dropLast(4, migrationFile)
+  IO.putLine(`Migration - running script '${migrationName}'`)
+  return pipe(
+    mappend("/"),
+    mappend(folder),
+    readFile,
+    map(
+      (q) => `
+    BEGIN;
+    ${q};
+    INSERT INTO madlib__migrations VALUES ( '${migrationName}' );
+    COMMIT;
+  `,
+    ),
+    chain(query(DBAccessFailed, $, connection)),
+    map(() => {
+      IO.putLine(`Migration - script '${migrationName}' was successful`)
+    }),
+  )(migrationFile)
+}
+
+
+runMigrations :: String -> String -> Wish {} {}
+export runMigrations = (connectionString, folder) => Wish(
+  (badCB, goodCB) => {
+    migrationWish = do {
+      connection <- connect(connectionString)
+
+      return chainRej(
+        (err) => {
+          PG.disconnect(connection)
+          return bad(err)
+        },
+        do {
+          _ <- query(
+            DBAccessFailed,
+            `CREATE TABLE IF NOT EXISTS madlib__migrations (
+              name VARCHAR(512) PRIMARY KEY NOT NULL
+            );`,
+            connection,
+          )
+
+          alreadyRunMigrations <- pipe(
+            query(DBAccessFailed, "SELECT * from madlib__migrations;"),
+            map(mconcat),
+            map(
+              map(
+                where {
+                  PG.VarCharValue(s) =>
+                    s
+
+                  _ =>
+                    ""
+                },
+              ),
+            ),
+          )(connection)
+
+          return pipe(
+            readDir,
+            map(
+              List.filter(
+                pipe(
+                  String.takeLast(4),
+                  equals(".sql"),
+                ),
+              ),
+            ),
+            map(
+              List.filter(
+                pipe(
+                  String.dropLast(4),
+                  List.includes($, alreadyRunMigrations),
+                  not,
+                ),
+              ),
+            ),
+            map(List.sort),
+            chain(List.mapM(runMigration(connection, folder))),
+          )(folder)
+        },
+      )
+    }
+
+    IO.putLine("Migration - starting DB migration")
+
+    return fulfill(
+      (err) => {
+        where(err) {
+          FolderCouldNotBeRead(dir) =>
+            do {
+              IO.putLine(`Migration - the folder '${dir}' could not be read`)
+              IO.putLine(`Migration - failed`)
+            }
+
+          DBAccessFailed(e) =>
+            IO.putLine(`Migration - DB could not be accessed: ${show(e)}`)
+
+          e =>
+            IO.cLog(e)
+        }
+        badCB({})
+      },
+      () => {
+        IO.putLine("Migration - done.")
+        goodCB({})
+      },
+      migrationWish,
+    )
+  },
+)

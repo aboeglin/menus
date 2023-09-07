@@ -1,9 +1,12 @@
+import IO from "IO"
 import { Nothing } from "Maybe"
+import { fulfill } from "Wish"
 
 import Postgres from "MadPostgres"
 import Server from "MadServer"
 
 import { createIngredient, getAllIngredients } from "./Ingredient"
+import { runMigrations } from "./Migration"
 
 
 
@@ -27,11 +30,19 @@ initDB = () => do {
 
 
 main = () => {
+  fulfill(
+    () => {
+      IO.putLine("Migration failed, shutting down.")
+    },
+    () => {
+      pipe(
+        Server.create,
+        Server.get("/ingredients", getAllIngredients),
+        Server.post("/ingredients", createIngredient),
+        Server.run(4001),
+      )({ ssl: Nothing, verbose: true })
+    },
+    runMigrations("postgresql://menus:menus@localhost:5432/menus", "./src/migrations"),
+  )
   //   fulfill(IO.cLog, IO.cLog, initDB())
-  pipe(
-    Server.create,
-    Server.get("/ingredients", getAllIngredients),
-    Server.post("/ingredients", createIngredient),
-    Server.run(4001),
-  )({ ssl: Nothing, verbose: true })
 }
