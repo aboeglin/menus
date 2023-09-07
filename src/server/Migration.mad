@@ -49,22 +49,21 @@ runMigration :: PG.Connection -> String -> String -> Wish MigrationError {}
 runMigration = (connection, folder, migrationFile) => {
   migrationName = String.dropLast(4, migrationFile)
   IO.putLine(`Migration - running script '${migrationName}'`)
+
   return pipe(
     mappend("/"),
     mappend(folder),
     readFile,
     map(
       (q) => `
-    BEGIN;
-    ${q};
-    INSERT INTO madlib__migrations VALUES ( '${migrationName}' );
-    COMMIT;
-  `,
+        BEGIN;
+        ${q};
+        INSERT INTO madlib__migrations VALUES ( '${migrationName}' );
+        COMMIT;
+      `,
     ),
     chain(query(DBAccessFailed, $, connection)),
-    map(() => {
-      IO.putLine(`Migration - script '${migrationName}' was successful`)
-    }),
+    map(() => { IO.putLine(`Migration - script '${migrationName}' was successful`) }),
   )(migrationFile)
 }
 
@@ -117,6 +116,9 @@ export runMigrations = (connectionString, folder) => Wish(
             ),
             map(
               List.filter(
+                // TODO: this should actually compare migrations one by one
+                // to make sure that order is correct and that no already
+                // run migration is missing in the folder
                 pipe(
                   String.dropLast(4),
                   List.includes($, alreadyRunMigrations),
