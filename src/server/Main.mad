@@ -44,5 +44,4 @@ main = () => {
     },
     runMigrations("postgresql://menus:menus@localhost:5432/menus", "./src/migrations"),
   )
-  //   fulfill(IO.cLog, IO.cLog, initDB())
 }
