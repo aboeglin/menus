@@ -1,4 +1,23 @@
-import Json from "Json/Parse"
+import type { Response } from "Http"
+import type { Wish } from "Wish"
+
+import type { Connection, Value } from "MadPostgres"
+import type { IncomingRequest } from "MadServer"
+
+import type { Error } from "./Error"
+
+import ByteArray from "ByteArray"
+import { Left, Right } from "Either"
+import { Header } from "Http"
+import JsonParser from "Json/Parse"
+import JsonPrinter from "Json/Print"
+import List from "List"
+import { bad, chainRej } from "Wish"
+
+import MadPostgres from "MadPostgres"
+
+import { connect, queryWithError } from "./DB"
+import { BadInput, InsertFailed, ReadFailed, DBResultParseError } from "./Error"
 
 
 
@@ -9,4 +28,103 @@ alias Recipe = { name :: String }
 
 // ----------- Parser -------------------------------------
 
-recipeParser = map((name) => ({ name }), Json.field("name", Json.string))
+recipeParser = map((name) => ({ name }), JsonParser.field("name", JsonParser.string))
+
+
+fromJson :: String -> Wish Error Recipe
+fromJson = (json) => where(JsonParser.parse(recipeParser, json)) {
+  Right(ingredient) =>
+    of(ingredient)
+
+  Left(err) =>
+    bad(BadInput(err))
+}
+
+
+// ----------- Printer ------------------------------------
+
+recipePrinter = (recipe) => JsonPrinter.object([#["name", JsonPrinter.string(recipe.name)]])
+
+
+recipesPrinter = JsonPrinter.list(recipePrinter)
+
+
+toJson :: Recipe -> String
+toJson = (recipe) => JsonPrinter.printJson(80, recipePrinter(recipe))
+
+listToJson :: List Recipe -> String
+listToJson = (recipes) => JsonPrinter.printJson(80, recipesPrinter(recipes))
+
+
+// ----------- DB -----------------------------------------
+
+parseRecipeRow :: List Value -> Wish Error Recipe
+parseRecipeRow = (row) => where(row) {
+  [MadPostgres.VarCharValue(name)] =>
+    of({ name })
+
+  or =>
+    bad(DBResultParseError)
+}
+
+
+selectRecipes :: Connection -> Wish Error (List Recipe)
+selectRecipes = (connection) => pipe(
+  queryWithError(ReadFailed, "SELECT * FROM recipes;"),
+  chain(List.mapM(parseRecipeRow)),
+)(connection)
+
+
+// ----------- REST ---------------------------------------
+
+DB_CONNECTION_RESPONSE = {
+  status: 500,
+  body: ByteArray.fromString(`{ "error": "connection to database could not be established" }`),
+  headers: [Header("Content-Type", "application/json")],
+}
+
+
+error = (status, message) => (
+  {
+    status,
+    body: ByteArray.fromString(`{ "error": "${message}" }`),
+    headers: [Header("Content-Type", "application/json")],
+  }
+)
+
+
+buildHttpError :: Wish Error a -> Wish (Response ByteArray) a
+buildHttpError = (err) => chainRej(
+  where {
+    BadInput(_) =>
+      bad(error(400, "Invalid input"))
+
+    InsertFailed(_) =>
+      bad(error(500, "Could not be created"))
+
+    _ =>
+      bad(error(500, "Internal error"))
+  },
+  err,
+)
+
+
+getAllRecipes :: IncomingRequest -> Wish (Response ByteArray) (Response ByteArray)
+export getAllRecipes = () => do {
+  connection <- chainRej(() => bad(DB_CONNECTION_RESPONSE), connect)
+
+  return pipe(
+    selectRecipes,
+    chain(
+      (ingredients) => of({
+        status: 200,
+        body: pipe(
+          listToJson,
+          ByteArray.fromString,
+        )(ingredients),
+        headers: [Header("Content-Type", "application/json")],
+      }),
+    ),
+    buildHttpError,
+  )(connection)
+}

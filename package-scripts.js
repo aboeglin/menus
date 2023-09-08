@@ -36,8 +36,7 @@ module.exports = {
       `"nps build.frontend.dev"`,
       `"nps sync"`,
       `"madlib compile -w -t llvm -i src/server/Main.mad -o build/server/run"`,
-      `"sh ./start-server.sh"`,
-      `"watch --filter=serverExe.js 'sh ./start-server.sh' ./build/server"`,
+      `"bash ./start-server.sh"`,
     ].join(" ")}`,
   },
 };

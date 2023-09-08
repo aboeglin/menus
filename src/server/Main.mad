@@ -2,31 +2,11 @@ import IO from "IO"
 import { Nothing } from "Maybe"
 import { fulfill } from "Wish"
 
-import Postgres from "MadPostgres"
 import Server from "MadServer"
 
 import { createIngredient, getAllIngredients } from "./Ingredient"
+import { getAllRecipes } from "./Recipe"
 import { runMigrations } from "./Migration"
-
-
-
-initDB = () => do {
-  connection <- Postgres.connect("postgresql://menus:menus@localhost:5432/menus")
-
-  _ <- Postgres.query(
-    connection,
-    `CREATE TABLE ingredients (
-      id BIGSERIAL PRIMARY KEY NOT NULL,
-      name VARCHAR(256),
-      description VARCHAR(1024),
-      availableFrom SMALLINT,
-      availableUntil SMALLINT
-    );`,
-  )
-
-  Postgres.disconnect(connection)
-  return of({})
-}
 
 
 main = () => {
@@ -39,6 +19,7 @@ main = () => {
         Server.create,
         Server.get("/ingredients", getAllIngredients),
         Server.post("/ingredients", createIngredient),
+        Server.get("/recipes", getAllRecipes),
         Server.run(4001),
       )({ ssl: Nothing, verbose: true })
     },
