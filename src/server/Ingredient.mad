@@ -92,8 +92,8 @@ parseIngredientRow = (row) => where(row) {
     of({
       name,
       description,
-      availableFrom: Integer.toShort(availableFrom),
-      availableUntil: Integer.toShort(availableUntil),
+      availableFrom: availableFrom,
+      availableUntil: availableUntil,
     })
 
   or =>

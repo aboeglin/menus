@@ -1,13 +1,15 @@
 import type { Wish } from "Wish"
 
 import Directory from "Directory"
+import { Left, Right } from "Either"
 import File from "File"
 import { equals, not } from "Function"
 import IO from "IO"
 import List from "List"
+import Parse from "Parse"
 import String from "String"
 import { Wish } from "Wish"
-import { bad, chainRej, fulfill } from "Wish"
+import { bad, bichain, chainRej, fulfill } from "Wish"
 
 import PG from "MadPostgres"
 
@@ -45,6 +47,59 @@ export query = (errorConstructor, q, connection) => chainRej(
 )
 
 
+sqlStringParser = do {
+  _ <- Parse.char('\'')
+  chars <- Parse.many(
+    Parse.choice([Parse.string("\\'"), map(String.singleton, Parse.notChar('\''))]),
+  )
+  _ <- Parse.char('\'')
+
+  return pipe(
+    mconcat,
+    (s) => `'${s}'`,
+    of,
+  )(chars)
+}
+
+
+charParser = pipe(
+  map(String.singleton),
+)(Parse.notChar(';'))
+
+
+export maybeSpaces = pipe(
+  Parse.oneOf,
+  Parse.many,
+)([' ', '\n', '\r', '\t'])
+
+
+queryParser = do {
+  chars <- pipe(
+    Parse.choice,
+    Parse.some,
+    map(mconcat),
+  )([sqlStringParser, charParser])
+
+  _ <- maybeSpaces
+  _ <- map(() => {}, Parse.char(';')) <|> Parse.eof
+  _ <- maybeSpaces
+
+  return of(chars ++ ";")
+}
+
+
+queriesParser = Parse.some(queryParser)
+
+
+export splitQueries = (queryString) => where(Parse.runParser(queriesParser, queryString)) {
+  Right(queries) =>
+    queries
+
+  Left(_) =>
+    [queryString]
+}
+
+
 runMigration :: PG.Connection -> String -> String -> Wish MigrationError {}
 runMigration = (connection, folder, migrationFile) => {
   migrationName = String.dropLast(4, migrationFile)
@@ -55,14 +110,25 @@ runMigration = (connection, folder, migrationFile) => {
     mappend(folder),
     readFile,
     map(
-      (q) => `
-        BEGIN;
-        ${q};
-        INSERT INTO madlib__migrations VALUES ( '${migrationName}' );
-        COMMIT;
-      `,
+      (q) => (
+        [
+          `BEGIN;`,
+          ...splitQueries(q),
+          `INSERT INTO madlib__migrations VALUES ( '${migrationName}' );`,
+        ]
+      ),
     ),
-    chain(query(DBAccessFailed, $, connection)),
+    chain(List.mapM(query(DBAccessFailed, $, connection))),
+    bichain(
+      (err) => do {
+        _ <- query(DBAccessFailed, `COMMIT;`, connection)
+        return bad(err)
+      },
+      () => do {
+        _ <- query(DBAccessFailed, `COMMIT;`, connection)
+        return of({})
+      },
+    ),
     map(() => { IO.putLine(`Migration - script '${migrationName}' was successful`) }),
   )(migrationFile)
 }

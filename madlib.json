@@ -9,14 +9,14 @@
       "minVersion": "7.0.0"
     },
     {
-      "url": "https://github.com/madlib-lang/madserver/archive/refs/tags/v2.0.2.zip",
+      "url": "https://github.com/madlib-lang/madserver/archive/refs/tags/v3.0.0.zip",
       "description": "MadServer",
-      "minVersion": "2.0.2"
+      "minVersion": "3.0.0"
     },
     {
-      "url": "https://github.com/madlib-lang/madpostgres/archive/refs/tags/v0.0.1.zip",
+      "url": "https://github.com/madlib-lang/madpostgres/archive/refs/tags/v1.0.0.zip",
       "description": "MadPostgres",
-      "minVersion": "0.0.1"
+      "minVersion": "1.0.0"
     }
   ]
 }

@@ -1,0 +1,37 @@
+import { assertEquals, test } from "Test"
+
+import { splitQueries } from "./Migration"
+
+
+
+test(
+  "splitQueries",
+  () => assertEquals(
+    splitQueries(`INSERT INTO table VALUES (';');\nINSERT INTO table VALUES (';');`),
+    ["INSERT INTO table VALUES (';');", "INSERT INTO table VALUES (';');"],
+  ),
+)
+
+test(
+  "splitQueries - escaped single quote",
+  () => assertEquals(
+    splitQueries(`INSERT INTO table VALUES ('\\';');\nINSERT INTO table VALUES (';');`),
+    ["INSERT INTO table VALUES ('\\';');", "INSERT INTO table VALUES (';');"],
+  ),
+)
+
+test(
+  "splitQueries - no semicolon for last query",
+  () => assertEquals(
+    splitQueries(`INSERT INTO table VALUES ('\\';');\nINSERT INTO table VALUES (';')`),
+    ["INSERT INTO table VALUES ('\\';');", "INSERT INTO table VALUES (';');"],
+  ),
+)
+
+test(
+  "splitQueries - no semicolon for one query",
+  () => assertEquals(
+    splitQueries(`INSERT INTO table VALUES ('\\';')\n`),
+    ["INSERT INTO table VALUES ('\\';')\n;"],
+  ),
+)
