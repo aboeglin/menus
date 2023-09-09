@@ -1,0 +1,27 @@
+import { className, header, li, link, nav, to, ul } from "MadUI"
+
+
+
+Menu = () => (
+  <nav className="menu">
+    <ul>
+      <li className="menu__item menu__item--ingredients">
+        <link to="/ingredients">
+          Ingrédients
+        </link>
+      </li>
+      <li className="menu__item menu__item--recipes">
+        <link to="/recipes">
+          Recettes
+        </link>
+      </li>
+      <li className="menu__item menu__item--menus">
+        <link to="/menus">
+          Menus
+        </link>
+      </li>
+    </ul>
+  </nav>
+)
+
+export Header = () => <header className="header"><link to="/">Menus</link>{Menu()}</header>

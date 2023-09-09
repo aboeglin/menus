@@ -21,7 +21,7 @@ module.exports = {
     build: {
       frontend: {
         main: `madlib compile -i ${input.mad.Main} --target browser --bundle -o ${out.mad.Main}`,
-        watch: `madlib compile -i ${input.mad.Main} --target browser --bundle -o ${out.mad.Main} -w &`,
+        watch: `madlib compile -i ${input.mad.Main} --target browser --bundle -o ${out.mad.Main} -w`,
         dev: "nps build.frontend.watch",
       },
     },
@@ -29,6 +29,9 @@ module.exports = {
       description: "sync the browser",
       script:
         "browser-sync start --server build/public/ --files build/public/ --serveStatic build/public/ --no-open --reload-debounce 100",
+    },
+    kill: {
+      server: "ps aux | grep \"./build/server/run$\" | awk '{print $2;}' | xargs kill -9;",
     },
     dev: `concurrently ${[
       `"copy-and-watch --watch src/client/**/*.{html,svg,json} build/public/"`,

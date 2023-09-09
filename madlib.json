@@ -2,6 +2,10 @@
   "name": "menus",
   "version": "0.0.1",
   "main": "src/Main.mad",
+  "importAliases": {
+    "client": "src/client",
+    "server": "src/server"
+  },
   "dependencies": [
     {
       "url": "https://github.com/madlib-lang/madui/archive/refs/tags/v7.0.0.zip",

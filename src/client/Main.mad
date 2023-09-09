@@ -1,12 +1,9 @@
-import { DEFAULT_CONFIG, renderWithConfig, h1 } from "MadUI"
+import { DEFAULT_CONFIG, renderWithConfig } from "MadUI"
+
+import { App } from "@client/views/App"
 
 
 
 main = () => {
-  renderWithConfig(
-    DEFAULT_CONFIG,
-    () => <h1>Menus</h1>,
-    {},
-    "app",
-  )
+  renderWithConfig(DEFAULT_CONFIG, App, {}, "app")
 }
