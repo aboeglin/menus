@@ -34,7 +34,7 @@ module.exports = {
       server: "ps aux | grep \"./build/server/run$\" | awk '{print $2;}' | xargs kill -9;",
     },
     dev: `concurrently ${[
-      `"copy-and-watch --watch src/client/**/*.{html,svg,json} build/public/"`,
+      `"copy-and-watch --watch src/client/**/*.{html,svg,json,ttf} build/public/"`,
       `"sass --watch ${input.styles}:${out.styles.main}"`,
       `"nps build.frontend.dev"`,
       `"nps sync"`,

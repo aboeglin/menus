@@ -1,3 +1,8 @@
-import { Header } from "@client/views/Header"
+import { className, div } from "MadUI"
 
-export App = () => Header()
+import { Header } from "@client/views/Header"
+import { Table } from "@client/views/Table"
+
+
+
+export App = () => <div className="app">{Header()}{Table()}</div>

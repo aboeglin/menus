@@ -1,15 +1,65 @@
 .header {
-  box-shadow: blue 0px 2px 0px 0px, rgb(255, 255, 255) 0px 4px 0px 0px,
-    #1fc11b 0px 6px, rgb(255, 255, 255) 0px 8px 0px 0px, #ffd913 0px 10px,
-    rgb(255, 255, 255) 0px 12px 0px 0px, rgb(255, 156, 85) 0px 14px,
-    rgb(255, 255, 255) 0px 16px 0px 0px, rgb(255, 85, 85) 0px 18px;
-  padding: 20px 0;
-  margin: 0 20px;
+  box-shadow: blue 0px 2px 0px 0px, rgb(255, 255, 255) 0px 3px 0px 0px,
+    #1fc11b 0px 5px, rgb(255, 255, 255) 0px 6px 0px 0px, #ffd913 0px 8px,
+    rgb(255, 255, 255) 0px 9px 0px 0px, #ff9c55 0px 11px,
+    rgb(255, 255, 255) 0px 12px 0px 0px, #ff5555 0px 14px;
+  padding: 0 0 20px;
+  margin: 0 0 80px;
+}
+
+.header__title {
+  position: absolute;
+  top: 20px;
+  font-size: 36px;
+  display: inline-block;
+  font-family: "Prompt-Bold";
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: rgba(0, 0, 0, 0.25) 1px 1px 1px;
+
+  &:hover {
+    span:nth-child(1) {
+      color: #ff5555;
+    }
+    span:nth-child(2) {
+      color: #ff9c55;
+    }
+    span:nth-child(3) {
+      color: #ffd913;
+    }
+    span:nth-child(4) {
+      color: #1fc11b;
+    }
+    span:nth-child(5) {
+      color: blue;
+    }
+  }
+
+  > span {
+    transition: color 0.5s;
+
+    &:nth-child(1) {
+      color: blue;
+    }
+    &:nth-child(2) {
+      color: #1fc11b;
+    }
+    &:nth-child(3) {
+      color: #ffd913;
+    }
+    &:nth-child(4) {
+      color: #ff9c55;
+    }
+    &:nth-child(5) {
+      color: #ff5555;
+    }
+  }
 }
 
 .menu {
   display: inline-block;
-  width: calc(100vw - 90px);
+  width: calc(100vw - 40px);
 }
 
 .menu > ul {
@@ -21,26 +71,32 @@
 }
 
 .menu__item {
+  transition: cubic-bezier(0, 0.53, 1, 0.19) box-shadow 0.25s;
+
   &:not(:last-child) {
     margin-right: 20px;
   }
-  
-  transition: cubic-bezier(0,.53,1,.19) box-shadow 0.35s;
 
   &--ingredients {
     box-shadow: blue 0px 2px 0px 0px;
+
+    &.menu__item--selected,
     &:hover {
       box-shadow: blue 0px 20px 0px 0px, blue 0px -10px 0px 0px;
     }
   }
+
+
   &--recipes {
     box-shadow: #1fc11b 0px 2px 0px 0px;
+    &.menu__item--selected,
     &:hover {
       box-shadow: #1fc11b 0px 20px 0px 0px, #1fc11b 0px -10px 0px 0px;
     }
   }
   &--menus {
     box-shadow: #ffd913 0px 2px 0px 0px;
+    &.menu__item--selected,
     &:hover {
       box-shadow: #ffd913 0px 20px 0px 0px, #ffd913 0px -10px 0px 0px;
     }

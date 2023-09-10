@@ -1,0 +1,67 @@
+import { className, span, table, tbody, td, thead, tr, th } from "MadUI"
+
+
+
+export Table = () =>
+  <table className="table">
+    <thead>
+      <tr>
+        <th>
+          <span>Name</span>
+        </th>
+        <th>
+          <span>Description</span>
+        </th>
+        <th>
+          <span>De</span>
+        </th>
+        <th>
+          <span>À</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          Tomates
+        </td>
+        <td>
+          Fruit d'été
+        </td>
+        <td>
+          Mai
+        </td>
+        <td>
+          Octobre
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Tomates
+        </td>
+        <td>
+          Fruit d'été
+        </td>
+        <td>
+          Mai
+        </td>
+        <td>
+          Octobre
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Tomates
+        </td>
+        <td>
+          Fruit d'été
+        </td>
+        <td>
+          Mai
+        </td>
+        <td>
+          Octobre
+        </td>
+      </tr>
+    </tbody>
+  </table>

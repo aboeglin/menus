@@ -1,21 +1,26 @@
-import { className, header, li, link, nav, to, ul } from "MadUI"
+import { className, getPathName, header, li, span, link, nav, to, ul } from "MadUI"
 
+
+
+selectedClassname = (baseClass, path) => getPathName() == path
+  ? `${baseClass} menu__item--selected`
+  : baseClass
 
 
 Menu = () => (
   <nav className="menu">
     <ul>
-      <li className="menu__item menu__item--ingredients">
+      <li className={selectedClassname("menu__item menu__item--ingredients", "/ingredients")}>
         <link to="/ingredients">
           Ingrédients
         </link>
       </li>
-      <li className="menu__item menu__item--recipes">
+      <li className={selectedClassname("menu__item menu__item--recipes", "/recipes")}>
         <link to="/recipes">
           Recettes
         </link>
       </li>
-      <li className="menu__item menu__item--menus">
+      <li className={selectedClassname("menu__item menu__item--menus", "/menus")}>
         <link to="/menus">
           Menus
         </link>
@@ -24,4 +29,14 @@ Menu = () => (
   </nav>
 )
 
-export Header = () => <header className="header"><link to="/">Menus</link>{Menu()}</header>
+export Header = () =>
+  <header className="header">
+    <link to="/" className="header__title">
+      <span>M</span>
+      <span>e</span>
+      <span>n</span>
+      <span>u</span>
+      <span>s</span>
+    </link>
+    {Menu()}
+  </header>

@@ -4,3 +4,4 @@ madlib_modules
 build
 .tests
 .coverage
+.DS_Store
