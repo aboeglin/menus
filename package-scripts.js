@@ -27,8 +27,7 @@ module.exports = {
     },
     sync: {
       description: "sync the browser",
-      script:
-        "browser-sync start --server build/public/ --files build/public/ --serveStatic build/public/ --no-open --reload-debounce 100",
+      script: "node browser-sync.js"
     },
     kill: {
       server: "ps aux | grep \"./build/server/run$\" | awk '{print $2;}' | xargs kill -9;",

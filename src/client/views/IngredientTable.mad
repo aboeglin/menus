@@ -1,0 +1,103 @@
+import Http from "Http"
+import { mapRej } from "Wish"
+import type { Action} from "MadUI"
+import {
+  InputEvent,
+  button,
+  className,
+  input,
+  inputType,
+  onInput,
+  onClick,
+  placeholder,
+  syncAction,
+  size,
+} from "MadUI"
+
+import type {State} from "@client/State"
+import Ingredient from "@client/state/Ingredient"
+import { Table } from "@client/views/Table"
+
+
+
+handleNameChanged = syncAction(
+  (s, e) => where(e) {
+    InputEvent({ target: { value } }) =>
+      { ...s, ingredientDraft: { ...s.ingredientDraft, name: value } }
+
+    _ =>
+      s
+  },
+)
+
+import IO from "IO"
+handleDescriptionChanged = syncAction(
+  (s, e) => where(IO.trace("E", e)) {
+    InputEvent({ target: { value } }) =>
+      { ...s, ingredientDraft: { ...s.ingredientDraft, description: value } }
+
+    _ =>
+      s
+  },
+)
+
+
+handleCreateIngredient :: Action State
+handleCreateIngredient = (s, _) => pipe(
+  .ingredientDraft,
+  (draft) => ({ ...draft, availableFrom: 0, availableUntil: 0 }),
+  Ingredient.toJson,
+  Http.post("http://localhost:4001/ingredients"),
+  mapRej(() => ""),
+  map(.body),
+  chain(Ingredient.fromJson),
+  mapRej((_, _s) => _s),
+  map(
+    (ingredient, _s) => (
+      {
+        ..._s,
+        ingredients: [..._s.ingredients, ingredient],
+        ingredientDraft: { name: "", description: "" },
+      }
+    ),
+  ),
+  of,
+)(s)
+
+
+export IngredientTable = (state) => Table({
+  columnNames: ["Nom", "Description", "De", "À", "Actions"],
+  rows: [
+    ...map(
+      (ingredient) => [
+        ingredient.name,
+        ingredient.description,
+        show(ingredient.availableFrom),
+        show(ingredient.availableUntil),
+        "-",
+      ],
+      state.ingredients,
+    ),
+    [
+      <input
+        inputType="text"
+        size={1}
+        placeholder="Riz"
+        onInput={handleNameChanged}
+        className="table__field"
+      />,
+      <input
+        inputType="text"
+        size={1}
+        placeholder="Céréale"
+        onInput={handleDescriptionChanged}
+        className="table__field"
+      />,
+      <input inputType="text" size={1} className="table__field" />,
+      <input inputType="text" size={1} className="table__field" />,
+      <button onClick={handleCreateIngredient}>
+        +
+      </button>,
+    ],
+  ],
+})

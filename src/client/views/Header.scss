@@ -37,7 +37,7 @@
   }
 
   > span {
-    transition: color 0.5s;
+    transition: color 0.25s;
 
     &:nth-child(1) {
       color: blue;
@@ -71,7 +71,7 @@
 }
 
 .menu__item {
-  transition: cubic-bezier(0, 0.53, 1, 0.19) box-shadow 0.25s;
+  transition: cubic-bezier(0, 0.53, 1, 0.19) box-shadow 0.15s;
 
   &:not(:last-child) {
     margin-right: 20px;
@@ -80,8 +80,10 @@
   &--ingredients {
     box-shadow: blue 0px 2px 0px 0px;
 
-    &.menu__item--selected,
     &:hover {
+      box-shadow: blue -10px 20px 0px 0px, blue 10px -10px 0px 0px;
+    }
+    &.menu__item--selected {
       box-shadow: blue 0px 20px 0px 0px, blue 0px -10px 0px 0px;
     }
   }
@@ -89,15 +91,19 @@
 
   &--recipes {
     box-shadow: #1fc11b 0px 2px 0px 0px;
-    &.menu__item--selected,
     &:hover {
+      box-shadow: #1fc11b -10px 20px 0px 0px, #1fc11b 10px -10px 0px 0px;
+    }
+    &.menu__item--selected {
       box-shadow: #1fc11b 0px 20px 0px 0px, #1fc11b 0px -10px 0px 0px;
     }
   }
   &--menus {
     box-shadow: #ffd913 0px 2px 0px 0px;
-    &.menu__item--selected,
     &:hover {
+      box-shadow: #ffd913 -10px 20px 0px 0px, #ffd913 10px -10px 0px 0px;
+    }
+    &.menu__item--selected {
       box-shadow: #ffd913 0px 20px 0px 0px, #ffd913 0px -10px 0px 0px;
     }
   }

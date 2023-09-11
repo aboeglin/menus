@@ -1,0 +1,75 @@
+import type { Wish } from "Wish"
+import type { Wish } from "Wish"
+
+import { Left, Right } from "Either"
+import { Left, Right } from "Either"
+import Integer from "Integer"
+import JsonParser from "Json/Parse"
+import JsonPrinter from "Json/Print"
+import List from "List"
+import { bad } from "Wish"
+import { bad } from "Wish"
+
+
+
+export alias Ingredient = {
+  availableFrom :: Short,
+  availableUntil :: Short,
+  description :: String,
+  name :: String,
+}
+
+
+// ----------- Parser -------------------------------------
+
+short = map(Integer.toShort, JsonParser.integer)
+
+
+ingredientParser = JsonParser.map4(
+  (name, description, availableFrom, availableUntil) => (
+    { name, description, availableFrom, availableUntil }
+  ),
+  JsonParser.field("name", JsonParser.string),
+  JsonParser.field("description", JsonParser.string),
+  JsonParser.field("availableFrom", short),
+  JsonParser.field("availableUntil", short),
+)
+
+
+fromJson :: String -> Wish String Ingredient
+export fromJson = (json) => where(JsonParser.parse(ingredientParser, json)) {
+  Right(ingredient) =>
+    of(ingredient)
+
+  Left(err) =>
+    bad(err)
+}
+
+
+manyFromJson :: String -> Wish String (List Ingredient)
+export manyFromJson = (json) => where(JsonParser.parse(JsonParser.list(ingredientParser), json)) {
+  Right(ingredient) =>
+    of(ingredient)
+
+  Left(err) =>
+    bad(err)
+}
+
+
+// ----------- Printer ------------------------------------
+
+ingredientPrinter = (ingredient) => JsonPrinter.object([
+  #["name", JsonPrinter.string(ingredient.name)],
+  #["description", JsonPrinter.string(ingredient.description)],
+  #["availableFrom", JsonPrinter.integer(Integer.fromShort(ingredient.availableFrom))],
+  #["availableUntil", JsonPrinter.integer(Integer.fromShort(ingredient.availableUntil))],
+])
+
+ingredientsPrinter = JsonPrinter.list(ingredientPrinter)
+
+
+toJson :: Ingredient -> String
+export toJson = (ingredient) => JsonPrinter.printJson(80, ingredientPrinter(ingredient))
+
+listToJson :: List Ingredient -> String
+export listToJson = (ingredients) => JsonPrinter.printJson(80, ingredientsPrinter(ingredients))

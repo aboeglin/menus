@@ -1,67 +1,26 @@
-import { className, span, table, tbody, td, thead, tr, th } from "MadUI"
+import type { Element } from "MadUI"
+
+import { className, span, table, tbody, td, th, thead, tr } from "MadUI"
 
 
 
-export Table = () =>
-  <table className="table">
-    <thead>
-      <tr>
-        <th>
-          <span>Name</span>
-        </th>
-        <th>
-          <span>Description</span>
-        </th>
-        <th>
-          <span>De</span>
-        </th>
-        <th>
-          <span>À</span>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          Tomates
-        </td>
-        <td>
-          Fruit d'été
-        </td>
-        <td>
-          Mai
-        </td>
-        <td>
-          Octobre
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Tomates
-        </td>
-        <td>
-          Fruit d'été
-        </td>
-        <td>
-          Mai
-        </td>
-        <td>
-          Octobre
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Tomates
-        </td>
-        <td>
-          Fruit d'été
-        </td>
-        <td>
-          Mai
-        </td>
-        <td>
-          Octobre
-        </td>
-      </tr>
-    </tbody>
-  </table>
+export alias TableConfig a = { columnNames :: List String, rows :: List (List (Element a)) }
+
+Table :: TableConfig a -> Element a
+export Table = (config) => {
+  columnNames = map((name) => <th><span>{name}</span></th>, config.columnNames)
+  rows = map((row) => <tr>{...map((cell) => <td>{cell}</td>, row)}</tr>, config.rows)
+
+  return (
+    <table className="table">
+      <thead>
+        <tr>
+          {...columnNames}
+        </tr>
+      </thead>
+      <tbody>
+        {...rows}
+      </tbody>
+    </table>
+  )
+}

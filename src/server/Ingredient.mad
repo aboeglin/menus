@@ -8,7 +8,6 @@ import type { Error } from "./Error"
 
 import ByteArray from "ByteArray"
 import { Left, Right } from "Either"
-import { Header } from "Http"
 import Integer from "Integer"
 import JsonParser from "Json/Parse"
 import JsonPrinter from "Json/Print"
@@ -17,8 +16,9 @@ import { bad, chainRej } from "Wish"
 
 import MadPostgres from "MadPostgres"
 
-import { connect, queryWithError } from "./DB"
-import { BadInput, InsertFailed, ReadFailed, DBResultParseError } from "./Error"
+import { connect, queryWithError } from "@server/DB"
+import { BadInput, DBResultParseError, InsertFailed, ReadFailed } from "@server/Error"
+import { DEFAULT_HEADERS } from "@server/Headers"
 
 
 
@@ -87,12 +87,7 @@ parseIngredientRow = (row) => where(row) {
     MadPostgres.Int2Value(availableFrom),
     MadPostgres.Int2Value(availableUntil),
   ] =>
-    of({
-      name,
-      description,
-      availableFrom: availableFrom,
-      availableUntil: availableUntil,
-    })
+    of({ name, description, availableFrom: availableFrom, availableUntil: availableUntil })
 
   or =>
     bad(DBResultParseError)
@@ -134,7 +129,7 @@ selectIngredients = (connection) => pipe(
 DB_CONNECTION_RESPONSE = {
   status: 500,
   body: ByteArray.fromString(`{ "error": "connection to database could not be established" }`),
-  headers: [Header("Content-Type", "application/json")],
+  headers: DEFAULT_HEADERS,
 }
 
 
@@ -142,7 +137,7 @@ error = (status, message) => (
   {
     status,
     body: ByteArray.fromString(`{ "error": "${message}" }`),
-    headers: [Header("Content-Type", "application/json")],
+    headers: DEFAULT_HEADERS,
   }
 )
 
@@ -179,7 +174,7 @@ export createIngredient = (req) => do {
           toJson,
           ByteArray.fromString,
         )(ingredient),
-        headers: [Header("Content-Type", "application/json")],
+        headers: DEFAULT_HEADERS,
       }),
     ),
     buildHttpError,
@@ -200,7 +195,7 @@ export getAllIngredients = () => do {
           listToJson,
           ByteArray.fromString,
         )(ingredients),
-        headers: [Header("Content-Type", "application/json")],
+        headers: DEFAULT_HEADERS,
       }),
     ),
     buildHttpError,

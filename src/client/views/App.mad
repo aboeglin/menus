@@ -1,8 +1,12 @@
-import { className, div } from "MadUI"
+import { className, div, switchRoute } from "MadUI"
 
 import { Header } from "@client/views/Header"
-import { Table } from "@client/views/Table"
+import { IngredientTable } from "@client/views/IngredientTable"
 
 
 
-export App = () => <div className="app">{Header()}{Table()}</div>
+export App = (state) =>
+  <div className="app">
+    {Header()}
+    {switchRoute([#["/ingredients", () => IngredientTable(state)], #["/", () => "HOME"]])}
+  </div>

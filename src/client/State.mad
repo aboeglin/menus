@@ -1,0 +1,20 @@
+import type { Ingredient } from "@client/state/Ingredient"
+
+
+
+export alias State = {
+  ingredients :: List Ingredient,
+  ingredientDraft :: {
+    name :: String,
+    description :: String,
+  },
+}
+
+INITIAL_STATE :: State
+export INITIAL_STATE = {
+  ingredients: [],
+  ingredientDraft: {
+    name: "",
+    description: "",
+  },
+}

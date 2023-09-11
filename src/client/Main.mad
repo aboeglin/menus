@@ -1,9 +1,38 @@
-import { DEFAULT_CONFIG, renderWithConfig } from "MadUI"
+import Http from "Http"
+import List from "List"
+import String from "String"
+import { mapRej } from "Wish"
 
+import { DEFAULT_CONFIG, onUrlChanged, renderWithConfig } from "MadUI"
+
+import { INITIAL_STATE } from "@client/State"
+import Ingredient from "@client/state/Ingredient"
 import { App } from "@client/views/App"
 
 
+lowerCasedName = pipe(.name, String.toLower)
+
+handleUrlChanged = onUrlChanged(
+  (_, e) => pipe(
+    () => Http.get("http://localhost:4001/ingredients"),
+    mapRej(() => ""),
+    map(.body),
+    chain(Ingredient.manyFromJson),
+    mapRej((_, s) => s),
+    map(
+      (ingredients, s) => (
+        { ...s, ingredients: List.sortBy((a, b) => compare(lowerCasedName(a), lowerCasedName(b)), ingredients) }
+      ),
+    ),
+    of,
+  )(e),
+)
 
 main = () => {
-  renderWithConfig(DEFAULT_CONFIG, App, {}, "app")
+  renderWithConfig(
+    { ...DEFAULT_CONFIG, globalEventHandlers: [handleUrlChanged] },
+    App,
+    INITIAL_STATE,
+    "app",
+  )
 }
